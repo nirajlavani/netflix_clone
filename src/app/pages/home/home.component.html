@@ -1,0 +1,51 @@
+<div class="home-container">
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p class="subtext">Loading movies...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !isLoading">
+    <i class="fas fa-exclamation-circle"></i>
+    <p class="subtext">{{ error }}</p>
+  </div>
+
+  <!-- Content -->
+  <ng-container *ngIf="!isLoading && !error">
+    <!-- Hero Section -->
+    <div class="hero-section" *ngIf="featuredMovie">
+      <div class="hero-backdrop" [style.background-image]="'url(https://image.tmdb.org/t/p/original' + featuredMovie.backdrop_path + ')'">
+        <div class="hero-content">
+          <h1 class="hero-title subtext">{{ featuredMovie.title }}</h1>
+          <p class="hero-description description">{{ featuredMovie.overview }}</p>
+          <div class="hero-buttons">
+            <button class="play-button">
+              <i class="fas fa-play"></i> Play
+            </button>
+            <button class="info-button">
+              <i class="fas fa-info-circle"></i> More Info
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="categories-section" *ngFor="let category of categories">
+      <h2 class="category-title subtext">{{ category.name }}</h2>
+      <div class="movies-row">
+        <div class="movie-card" *ngFor="let movie of moviesByCategory[category.id]">
+          <img [src]="'https://image.tmdb.org/t/p/w500' + movie.poster_path" [alt]="movie.title" class="movie-poster">
+          <div class="movie-info">
+            <h3 class="movie-title subtext">{{ movie.title }}</h3>
+            <div class="movie-rating">
+              <i class="fas fa-star"></i>
+              <span class="subtext">{{ movie.vote_average }}/10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,55 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #141414;
+  color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #141414;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-x: hidden;
+}
+
+html {
+  background-color: #141414;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+}
+
+.subtext {
+  font-family: 'Syne', sans-serif;
+  font-weight: 300;
+}
+
+.description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+}
