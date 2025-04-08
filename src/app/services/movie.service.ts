@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; // Import environment
 
 export interface Movie {
   id: number;
@@ -10,13 +11,14 @@ export interface Movie {
   backdrop_path: string;
   release_date: string;
   vote_average: number;
+  genre_ids: number[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class MovieService {
-  private apiKey = 'e4b802f10936bec059fb81dec8dc41a1'; // Your TMDB API key
+  private apiKey = environment.apiKey; // Use the key from environment
   private baseUrl = 'https://api.themoviedb.org/3';
 
   constructor(private http: HttpClient) {}
@@ -33,7 +35,7 @@ export class MovieService {
     return this.http.get<{ genres: { id: number; name: string }[] }>(`${this.baseUrl}/genre/movie/list?api_key=${this.apiKey}`);
   }
 
-  getMoviesByCategory(categoryId: number): Observable<{ results: Movie[] }> {
-    return this.http.get<{ results: Movie[] }>(`${this.baseUrl}/discover/movie?api_key=${this.apiKey}&with_genres=${categoryId}`);
+  getMoviesByCategory(genreId: number): Observable<{ results: Movie[] }> {
+    return this.http.get<{ results: Movie[] }>(`${this.baseUrl}/discover/movie?api_key=${this.apiKey}&with_genres=${genreId}`);
   }
 } 
