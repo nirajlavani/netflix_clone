@@ -1,51 +1,64 @@
 <div class="home-container">
-  <!-- Loading State -->
-  <div class="loading-state" *ngIf="isLoading">
-    <div class="spinner"></div>
-    <p class="subtext">Loading movies...</p>
+  <!-- Loading and Error States -->
+  <div *ngIf="isLoading" class="loading-indicator subtext">
+    Loading Netflix...
+  </div>
+  <div *ngIf="errorMessage && !isLoading" class="error-message subtext">
+    {{ errorMessage }}
   </div>
 
-  <!-- Error State -->
-  <div class="error-state" *ngIf="error && !isLoading">
-    <i class="fas fa-exclamation-circle"></i>
-    <p class="subtext">{{ error }}</p>
-  </div>
-
-  <!-- Content -->
-  <ng-container *ngIf="!isLoading && !error">
-    <!-- Hero Section -->
-    <div class="hero-section" *ngIf="featuredMovie">
-      <div class="hero-backdrop" [style.background-image]="'url(https://image.tmdb.org/t/p/original' + featuredMovie.backdrop_path + ')'">
+  <!-- Hero Slideshow Section -->
+  <div *ngIf="!isLoading && slideshowMovies.length > 0" class="hero-section">
+    <div class="slideshow-container">
+      <!-- Slides -->
+      <div *ngFor="let movie of slideshowMovies; let i = index" 
+           class="slide" 
+           [class.active]="i === currentSlideIndex"
+           [style.background-image]="movie.poster_path ? 'url(https://image.tmdb.org/t/p/original' + movie.poster_path + ')' : null">
+        
+        <div class="hero-overlay"></div>
         <div class="hero-content">
-          <h1 class="hero-title subtext">{{ featuredMovie.title }}</h1>
-          <p class="hero-description description">{{ featuredMovie.overview }}</p>
+          <h1 class="hero-title">{{ movie.title }}</h1>
+          <p class="hero-description description">{{ movie.overview | slice:0:150 }}...</p>
           <div class="hero-buttons">
-            <button class="play-button">
-              <i class="fas fa-play"></i> Play
-            </button>
-            <button class="info-button">
-              <i class="fas fa-info-circle"></i> More Info
-            </button>
+            <button class="btn btn-play"><i class="fas fa-play"></i> Play</button>
+            <button class="btn btn-info"><i class="fas fa-info-circle"></i> More Info</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Categories Section -->
-    <div class="categories-section" *ngFor="let category of categories">
-      <h2 class="category-title subtext">{{ category.name }}</h2>
+      <!-- Navigation Arrows -->
+      <button class="slide-arrow prev" (click)="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+      <button class="slide-arrow next" (click)="nextSlide()"><i class="fas fa-chevron-right"></i></button>
+
+      <!-- Indicator Dots -->
+      <div class="slide-indicators">
+        <span *ngFor="let movie of slideshowMovies; let i = index" 
+              class="dot" 
+              [class.active]="i === currentSlideIndex"
+              (click)="goToSlide(i)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Section -->
+  <div *ngIf="!isLoading && categories.length > 0" class="categories-section" >
+    <div *ngFor="let category of categories" class="category-row">
+      <h2 class="category-title">{{ category.name }}</h2>
       <div class="movies-row">
-        <div class="movie-card" *ngFor="let movie of moviesByCategory[category.id]">
-          <img [src]="'https://image.tmdb.org/t/p/w500' + movie.poster_path" [alt]="movie.title" class="movie-poster">
+        <div *ngFor="let movie of moviesByCategory[category.id]" class="movie-card">
+          <img [src]="movie.poster_path ? 'https://image.tmdb.org/t/p/w500' + movie.poster_path : null" 
+               [alt]="movie.title || 'Movie Poster'" 
+               class="movie-poster">
           <div class="movie-info">
-            <h3 class="movie-title subtext">{{ movie.title }}</h3>
+            <h3 class="movie-title">{{ movie.title }}</h3>
             <div class="movie-rating">
               <i class="fas fa-star"></i>
-              <span class="subtext">{{ movie.vote_average }}/10</span>
+              <span>{{ movie.vote_average ? movie.vote_average.toFixed(1) + '/10' : 'N/A' }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </ng-container>
+  </div>
 </div>

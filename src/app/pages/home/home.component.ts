@@ -1,86 +1,139 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { MovieService, Movie } from '../../services/movie.service';
-import { RouterModule } from '@angular/router';
+import { Subscription, interval, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+  styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
-  featuredMovie: Movie | null = null;
+export class HomeComponent implements OnInit, OnDestroy {
+  bannerMovie: Movie | null = null;
+  slideshowMovies: Movie[] = [];
   categories: { id: number; name: string }[] = [];
   moviesByCategory: { [key: number]: Movie[] } = {};
-  isLoading: boolean = true;
-  error: string | null = null;
+  isLoading = true;
+  errorMessage: string | null = null;
 
-  constructor(private movieService: MovieService) {
-    console.log('HomeComponent initialized');
+  currentSlideIndex = 0;
+  private slideshowIntervalSubscription: Subscription | null = null;
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private movieService: MovieService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
+
+  ngOnInit(): void {
+    this.loadInitialData();
   }
 
-  ngOnInit() {
-    console.log('ngOnInit called');
-    this.loadTrendingMovies();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.slideshowIntervalSubscription) {
+      this.slideshowIntervalSubscription.unsubscribe();
+    }
   }
 
-  private loadTrendingMovies() {
-    console.log('Loading trending movies...');
+  loadInitialData(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+
     this.movieService.getTrendingMovies().subscribe({
       next: (response) => {
-        console.log('Trending movies response:', response);
         if (response.results && response.results.length > 0) {
-          this.featuredMovie = response.results[0];
-          this.loadCategories();
+          this.slideshowMovies = response.results.slice(0, 5);
+          this.bannerMovie = this.slideshowMovies[0];
+          if (isPlatformBrowser(this.platformId)) {
+            this.startSlideshow();
+          }
         } else {
-          this.error = 'No trending movies found';
-          this.isLoading = false;
+          this.errorMessage = 'Could not load trending movies.';
         }
+        this.loadCategories();
       },
       error: (error) => {
         console.error('Error loading trending movies:', error);
-        this.error = 'Failed to load trending movies';
+        this.errorMessage = 'Failed to load trending movies. Please try again later.';
         this.isLoading = false;
       }
     });
   }
 
-  private loadCategories() {
-    console.log('Loading categories...');
+  loadCategories(): void {
     this.movieService.getMovieCategories().subscribe({
       next: (response) => {
-        console.log('Categories response:', response);
-        if (response.genres) {
-          this.categories = response.genres;
-          this.categories.forEach(category => {
-            this.loadMoviesByCategory(category.id);
-          });
-        }
-        this.isLoading = false;
+        this.categories = response.genres;
+        this.loadMoviesForCategories();
       },
       error: (error) => {
         console.error('Error loading categories:', error);
-        this.error = 'Failed to load movie categories';
+        this.errorMessage = 'Failed to load movie categories.';
         this.isLoading = false;
       }
     });
   }
 
-  private loadMoviesByCategory(categoryId: number) {
-    console.log(`Loading movies for category ${categoryId}...`);
-    this.movieService.getMoviesByCategory(categoryId).subscribe({
-      next: (response) => {
-        console.log(`Movies for category ${categoryId}:`, response);
-        if (response.results) {
-          this.moviesByCategory[categoryId] = response.results;
+  loadMoviesForCategories(): void {
+    let categoriesLoaded = 0;
+    if (this.categories.length === 0) {
+        this.isLoading = false;
+        return;
+    }
+
+    this.categories.forEach(category => {
+      this.movieService.getMoviesByCategory(category.id).subscribe({
+        next: (response) => {
+          this.moviesByCategory[category.id] = response.results;
+          categoriesLoaded++;
+          if (categoriesLoaded === this.categories.length) {
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          console.error(`Error loading movies for category ${category.name}:`, error);
+          categoriesLoaded++;
+          if (categoriesLoaded === this.categories.length) {
+            this.isLoading = false;
+          }
         }
-      },
-      error: (error) => {
-        console.error(`Error loading movies for category ${categoryId}:`, error);
-        this.moviesByCategory[categoryId] = [];
-      }
+      });
     });
+  }
+
+  startSlideshow(): void {
+    if (this.slideshowIntervalSubscription) {
+      this.slideshowIntervalSubscription.unsubscribe();
+    }
+    this.slideshowIntervalSubscription = interval(5000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.nextSlide();
+      });
+  }
+
+  nextSlide(): void {
+    this.currentSlideIndex = (this.currentSlideIndex + 1) % this.slideshowMovies.length;
+    this.bannerMovie = this.slideshowMovies[this.currentSlideIndex];
+  }
+
+  prevSlide(): void {
+    this.currentSlideIndex = (this.currentSlideIndex - 1 + this.slideshowMovies.length) % this.slideshowMovies.length;
+    this.bannerMovie = this.slideshowMovies[this.currentSlideIndex];
+  }
+
+  goToSlide(index: number): void {
+    if(index >= 0 && index < this.slideshowMovies.length) {
+        this.currentSlideIndex = index;
+        this.bannerMovie = this.slideshowMovies[this.currentSlideIndex];
+        if (isPlatformBrowser(this.platformId)) {
+            this.startSlideshow();
+        }
+    }
   }
 }
